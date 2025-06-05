@@ -6,6 +6,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Wompi config
+const WOMPI_PUBLIC_KEY = 'pub_test_ZHPvWKzKQSDwDKT0HQqVbWbdrnkrW7ll';
+
 // Global state
 let products = [];
 let categories = [];
@@ -275,94 +278,46 @@ function openCheckout() {
     checkoutModal.classList.add('visible');
 }
 
-// Process payment
-async function processPayment(customerData) {
-    try {
-        // Create customer in database
-        const { data: customer, error: customerError } = await supabase
-            .from('clientes')
-            .insert({
-                nombre: customerData.name,
-                telefono: customerData.phone,
-                direccion: customerData.address
-            })
-            .select()
-            .single();
+// INTEGRACIÓN REAL CON WOMPI:
+function pagarConWompi({ total, customerData, cart }) {
+    const valorCentavos = Math.round(total * 100);
+    const referencia = 'MSPORT-' + Date.now();
 
-        if (customerError) throw customerError;
+    // Guardar info de la orden en localStorage (para mostrar resumen en success.html)
+    localStorage.setItem('orderInfo', JSON.stringify({
+        customerData,
+        cart,
+        referencia,
+        total
+    }));
 
-        // Create sales records
-        const sales = [];
-        for (const item of cart) {
-            const product = products.find(p => p.id === item.productId);
-            
-            const { data: sale, error: saleError } = await supabase
-                .from('ventas')
-                .insert({
-                    producto_id: item.productId,
-                    cliente_id: customer.id,
-                    cantidad: item.quantity,
-                    total: item.price * item.quantity,
-                    pagado: true
-                })
-                .select()
-                .single();
+    // URL de redirección después del pago (ajusta si tu dominio cambia)
+    const redirectUrl = window.location.origin + '/success.html?ref=' + referencia;
 
-            if (saleError) throw saleError;
+    // Redirigir al checkout de Wompi
+    const checkoutUrl = `https://checkout.wompi.co/p/?public-key=${WOMPI_PUBLIC_KEY}` +
+        `&currency=COP&amount-in-cents=${valorCentavos}` +
+        `&reference=${referencia}` +
+        `&redirect-url=${encodeURIComponent(redirectUrl)}`;
 
-            // Update stock
-            const { error: stockError } = await supabase
-                .from('productos')
-                .update({ stock: product.stock - item.quantity })
-                .eq('id', item.productId);
-
-            if (stockError) throw stockError;
-
-            sales.push(sale);
-        }
-
-        // Show success
-        showSuccess(customerData, sales);
-        
-        // Clear cart
-        cart = [];
-        updateCartUI();
-        
-        // Reload products to update stock
-        await loadProducts();
-
-        // Send WhatsApp notification if provided
-        if (customerData.whatsapp) {
-            sendWhatsAppNotification(customerData, sales);
-        }
-
-    } catch (error) {
-        console.error('Error processing payment:', error);
-        showNotification('Error al procesar el pago', 'error');
-    }
+    window.location.href = checkoutUrl;
 }
 
-// Show success modal
-function showSuccess(customerData, sales) {
-    const purchaseSummary = document.getElementById('purchaseSummary');
-    const total = sales.reduce((sum, sale) => sum + parseFloat(sale.total), 0);
-    
-    purchaseSummary.innerHTML = `
-        <h4>Resumen de la compra</h4>
-        <p><strong>Cliente:</strong> ${customerData.name}</p>
-        <p><strong>Teléfono:</strong> ${customerData.phone}</p>
-        <p><strong>Total:</strong> $${total.toLocaleString()}</p>
-        <p><strong>Productos:</strong> ${sales.length}</p>
-    `;
+// Checkout form: enviar a Wompi
+document.getElementById('checkoutForm').addEventListener('submit', (e) => {
+    e.preventDefault();
 
-    successModal.classList.add('visible');
-}
+    const customerData = {
+        name: document.getElementById('customerName').value,
+        phone: document.getElementById('customerPhone').value,
+        address: document.getElementById('customerAddress').value,
+        whatsapp: document.getElementById('customerWhatsapp').value
+    };
 
-// Send WhatsApp notification (mock implementation)
-function sendWhatsAppNotification(customerData, sales) {
-    // In a real implementation, you would integrate with a WhatsApp API
-    console.log('WhatsApp notification would be sent to:', customerData.whatsapp);
-}
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    pagarConWompi({ total, customerData, cart });
+});
 
 // Show notification
 function showNotification(message, type = 'success') {
@@ -447,26 +402,6 @@ function setupEventListeners() {
                 modal.classList.remove('visible');
             }
         });
-    });
-
-    // Checkout form
-    document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const customerData = {
-            name: document.getElementById('customerName').value,
-            phone: document.getElementById('customerPhone').value,
-            address: document.getElementById('customerAddress').value,
-            whatsapp: document.getElementById('customerWhatsapp').value
-        };
-
-        // Mock Wompi integration - in real implementation, integrate with Wompi API
-        const confirmed = confirm('¿Confirmar pago por $' + cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString() + '?');
-        
-        if (confirmed) {
-            checkoutModal.classList.remove('visible');
-            await processPayment(customerData);
-        }
     });
 }
 

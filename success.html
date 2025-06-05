@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pago en Proceso | Mari Sport</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Poppins', Arial, sans-serif; background: #f6f6fb; color: #222; text-align: center; padding: 2rem; }
+    .container { background: #fff; margin: 2rem auto; padding: 2rem 1rem; border-radius: 16px; max-width: 400px; box-shadow: 0 4px 16px rgba(0,0,0,0.07);}
+    .spinner { margin: 2rem auto; border: 6px solid #eee; border-top: 6px solid #6b47dc; border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite;}
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .success { color: #28a745; font-size: 2rem; }
+    .fail { color: #dc3545; font-size: 2rem; }
+    .btn { background: #6b47dc; color: #fff; border: none; padding: 0.7rem 1.5rem; border-radius: 25px; font-size: 1rem; cursor: pointer; margin-top: 1.5rem; }
+    .btn:hover { background: #5632b3; }
+    ul { padding-left: 1.2em; text-align: left; }
+    .estado { margin-bottom: 1.2em; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Procesando tu pago...</h2>
+    <div class="spinner" id="spinner"></div>
+    <div id="status" class="estado"></div>
+    <div id="orderSummary"></div>
+    <button class="btn" style="display:none" onclick="window.location.href='/'" id="goHome">Ir a la tienda</button>
+  </div>
+  
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+
+    // Configuración Supabase (ajusta si cambias tus credenciales)
+    const SUPABASE_URL = 'https://ktbkqqiqeogwfnxjnpxw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0YmtxcWlxZW9nd2ZueGpucHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2NDYyNTEsImV4cCI6MjA2NDIyMjI1MX0.z84-xZz2H-VwpeqjITrjLDnEg35Slv485H534Ur7qbo';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Leer referencia desde URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const reference = urlParams.get('ref');
+    const statusDiv = document.getElementById('status');
+    const spinner = document.getElementById('spinner');
+    const orderSummary = document.getElementById('orderSummary');
+    const goHomeBtn = document.getElementById('goHome');
+
+    // Verificar pago en Wompi
+    async function verificarPagoWompi(ref) {
+      statusDiv.textContent = "Verificando tu pago con Wompi...";
+      try {
+        const response = await fetch(`https://production.wompi.co/v1/transactions?reference=${ref}`);
+        const data = await response.json();
+        if (!data.data.length) {
+          statusDiv.innerHTML = '<div class="fail">✗</div> No encontramos el pago.<br>Si tu dinero fue descontado, contáctanos.';
+        } else {
+          const trans = data.data[0];
+          if (trans.status === 'APPROVED') {
+            statusDiv.innerHTML = '<div class="success">✓</div> ¡Pago aprobado!';
+            await mostrarResumenOrden(true);
+          } else if (trans.status === 'DECLINED') {
+            statusDiv.innerHTML = '<div class="fail">✗</div> Pago rechazado. Intenta de nuevo.';
+            mostrarResumenOrden(false);
+          } else {
+            statusDiv.innerHTML = `<div>⏳</div> Estado del pago: ${trans.status}`;
+            mostrarResumenOrden(false);
+          }
+        }
+      } catch (err) {
+        statusDiv.innerHTML = '<div class="fail">✗</div> Error verificando el pago. Intenta más tarde.';
+      }
+      spinner.style.display = "none";
+      goHomeBtn.style.display = "inline-block";
+    }
+
+    // Guardar venta en Supabase solo si pago aprobado
+    async function guardarVentaSupabase(order) {
+      // 1. Guarda o busca el cliente
+      let clienteId = null;
+      if(order.customerData && order.customerData.phone) {
+        let { data: clientes } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('telefono', order.customerData.phone)
+          .limit(1);
+
+        if (clientes && clientes.length) {
+          clienteId = clientes[0].id;
+        } else {
+          let { data: cliente } = await supabase
+            .from('clientes')
+            .insert({
+              nombre: order.customerData.name,
+              telefono: order.customerData.phone,
+              direccion: order.customerData.address
+            })
+            .select()
+            .single();
+          clienteId = cliente.id;
+        }
+      }
+
+      // 2. Guarda cada venta (un registro por producto en el carrito)
+      for (const item of order.cart) {
+        // Registrar venta
+        await supabase
+          .from('ventas')
+          .insert({
+            producto_id: item.productId,
+            cliente_id: clienteId,
+            cantidad: item.quantity,
+            total: item.price * item.quantity,
+            pagado: true
+          });
+
+        // Actualiza el stock
+        const { data: prod } = await supabase
+          .from('productos')
+          .select('stock')
+          .eq('id', item.productId)
+          .single();
+
+        if(prod) {
+          await supabase
+            .from('productos')
+            .update({ stock: Math.max(0, prod.stock - item.quantity) })
+            .eq('id', item.productId);
+        }
+      }
+    }
+
+    // Mostrar resumen de la orden y guardar si es necesario
+    async function mostrarResumenOrden(guardarVenta = false) {
+      const info = localStorage.getItem('orderInfo');
+      if (!info) return;
+      const order = JSON.parse(info);
+
+      orderSummary.innerHTML = `
+        <h4>Resumen de la compra</h4>
+        <p><strong>Cliente:</strong> ${order.customerData.name}</p>
+        <p><strong>Teléfono:</strong> ${order.customerData.phone}</p>
+        <p><strong>Dirección:</strong> ${order.customerData.address}</p>
+        <p><strong>Total:</strong> $${order.total.toLocaleString()}</p>
+        <div style="text-align:left;margin:0 auto;max-width:90%;">
+          <strong>Productos:</strong>
+          <ul>
+            ${order.cart.map(item => `<li>${item.name} (${item.quantity}x) - $${(item.price * item.quantity).toLocaleString()}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      // Guardar venta solo si fue aprobado y no se ha guardado antes
+      if(guardarVenta && !localStorage.getItem('ventaRegistrada_'+order.referencia)) {
+        await guardarVentaSupabase(order);
+        localStorage.setItem('ventaRegistrada_'+order.referencia, "1");
+      }
+    }
+
+    // INICIO: Verificar referencia
+    if (reference) {
+      verificarPagoWompi(reference);
+    } else {
+      statusDiv.innerHTML = '<div class="fail">✗</div> Referencia no encontrada';
+      spinner.style.display = "none";
+      goHomeBtn.style.display = "inline-block";
+    }
+  </script>
+</body>
+</html>
