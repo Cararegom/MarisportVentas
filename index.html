@@ -1,0 +1,181 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mari Sport - Moda Deportiva Femenina | Tienda Online</title>
+    <meta name="description" content="Descubre la colección más trendy de ropa deportiva femenina en Mari Sport. ¡Luce increíble mientras entrenas! 💪✨">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/header.css">
+    <link rel="stylesheet" href="styles/hero.css">
+    <link rel="stylesheet" href="styles/products.css">
+    <link rel="stylesheet" href="styles/cart.css">
+    <link rel="stylesheet" href="styles/modal.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.0"
+      }
+    }
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img src="logo.png" alt="Mari Sport Logo" class="logo-img">
+                <span class="tagline">✨ Moda Deportiva Femenina ✨</span>
+            </div>
+            <nav class="nav">
+                <button class="cart-toggle" id="cartToggle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 3H5L5.4 5M7 13H17L21 5H5.4M7 13L5.4 5M7 13L4.7 15.3C4.3 15.7 4.6 16.5 5.1 16.5H17M17 13V19C17 20.1 16.1 21 15 21H9C7.9 21 7 20.1 7 19V13M17 13H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="cart-count" id="cartCount">0</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="motivational-phrase" id="motivationalPhrase">💪 ¡Tu único límite eres tú misma!</div>
+            <div class="hero-badge">💖 Nueva Colección 2025 🏋️‍♀️</div>
+            <h2>¡Luce increíble mientras entrenas!</h2>
+            <p>Descubre nuestra colección exclusiva de ropa deportiva diseñada especialmente para mujeres que aman el fitness y la moda ✨</p>
+            <button class="cta-button" onclick="document.getElementById('products').scrollIntoView()">
+                <span class="cta-text">Ver Colección</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="hero-decorations">
+            <div class="decoration decoration-1">🏋️‍♀️</div>
+            <div class="decoration decoration-2">🤸‍♀️</div>
+            <div class="decoration decoration-3">💖</div>
+            <div class="decoration decoration-4">🧘‍♀️</div>
+            <div class="decoration decoration-5">⭐</div>
+            <div class="decoration decoration-6">🏃‍♀️</div>
+        </div>
+        <div class="hero-background"></div>
+    </section>
+
+    <!-- Category Filter -->
+    <section class="filters">
+        <div class="container">
+            <div class="section-header">
+                <h3>💕 Categorías</h3>
+                <p>Encuentra tu estilo perfecto</p>
+            </div>
+            <div class="category-buttons" id="categoryButtons">
+                <button class="category-btn active" data-category="all">Todos</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products" id="products">
+        <div class="container">
+            <div class="section-header">
+                <h3>✨ Nuestra Colección</h3>
+                <p>Prendas diseñadas para mujeres empoderadas</p>
+            </div>
+            <h3>Productos</h3>
+            <div class="products-grid" id="productsGrid">
+                <!-- Products will be loaded here -->
+            </div>
+            <div class="loading" id="loading">Cargando productos...</div>
+        </div>
+    </section>
+
+    <!-- Shopping Cart -->
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>Carrito de Compras</h3>
+            <button class="close-cart" id="closeCart">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <!-- Cart items will be displayed here -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <strong>Total: $<span id="cartTotal">0</span></strong>
+            </div>
+            <button class="checkout-btn" id="checkoutBtn">Proceder al Pago</button>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">&times;</button>
+            <div class="modal-body" id="modalBody">
+                <!-- Product details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeCheckoutModal">&times;</button>
+            <div class="checkout-content">
+                <h3>Finalizar Compra</h3>
+                <form id="checkoutForm">
+                    <div class="form-group">
+                        <label for="customerName">Nombre completo *</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Teléfono *</label>
+                        <input type="tel" id="customerPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerAddress">Dirección *</label>
+                        <input type="text" id="customerAddress" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerWhatsapp">WhatsApp (opcional)</label>
+                        <input type="tel" id="customerWhatsapp">
+                    </div>
+                    <div class="order-summary">
+                        <h4>Resumen del pedido</h4>
+                        <div id="orderSummary"></div>
+                        <div class="total-amount">
+                            <strong>Total: $<span id="checkoutTotal">0</span></strong>
+                        </div>
+                    </div>
+                    <button type="submit" class="pay-button">Pagar con Wompi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-content">
+            <div class="success-content">
+                <div class="success-icon">✓</div>
+                <h3>¡Compra exitosa!</h3>
+                <p>Gracias por tu compra. Recibirás una confirmación por WhatsApp si proporcionaste tu número.</p>
+                <div id="purchaseSummary"></div>
+                <button class="close-success" id="closeSuccess">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Cart Overlay -->
+    <div class="cart-overlay" id="cartOverlay"></div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

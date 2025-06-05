@@ -1,0 +1,220 @@
+/* Hero Section */
+.hero {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    padding: 0 20px;
+}
+
+.hero-content {
+    z-index: 2;
+    color: #2d3436;
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.motivational-phrase {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem 2.5rem;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    animation: phraseGlow 2s ease-in-out infinite alternate;
+    transition: opacity 0.3s ease;
+    order: 1;
+}
+
+.hero-badge {
+    background: linear-gradient(45deg, #ff6b9d, #fd79a8);
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+    order: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hero-content h2 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 700;
+    background: linear-gradient(45deg, #2d3436, #636e72);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    order: 3;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    color: #636e72;
+    line-height: 1.6;
+    order: 4;
+    margin: 0;
+    max-width: 600px;
+}
+
+.cta-button {
+    background: linear-gradient(135deg, #ff6b9d 0%, #fd79a8 25%, #f093fb 50%, #ff6b9d 75%, #fd79a8 100%);
+    background-size: 300% 300%;
+    color: white;
+    border: none;
+    padding: 1.5rem 3rem;
+    border-radius: 60px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 
+        0 15px 35px rgba(255, 107, 157, 0.4),
+        0 5px 15px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    animation: gradientShift 3s ease infinite;
+    order: 5;
+    margin-top: 1rem;
+}
+
+.hero-decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.decoration {
+    position: absolute;
+    font-size: 2rem;
+    opacity: 0.4;
+    animation: float 6s ease-in-out infinite;
+}
+
+.decoration-1 {
+    top: 15%;
+    left: 8%;
+    animation-delay: 0s;
+}
+
+.decoration-2 {
+    top: 25%;
+    right: 12%;
+    animation-delay: 2s;
+}
+
+.decoration-3 {
+    bottom: 30%;
+    left: 10%;
+    animation-delay: 4s;
+}
+
+.decoration-4 {
+    bottom: 15%;
+    right: 15%;
+    animation-delay: 1s;
+}
+
+.decoration-5 {
+    top: 10%;
+    right: 25%;
+    animation-delay: 3s;
+}
+
+.decoration-6 {
+    bottom: 40%;
+    left: 20%;
+    animation-delay: 5s;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('../decorative-pattern.png');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.1;
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes phraseGlow {
+    from {
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    to {
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+    }
+}
+
+.cta-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s;
+}
+
+.cta-button:hover::before {
+    left: 100%;
+}
+
+.cta-button:hover {
+    transform: translateY(-5px) scale(1.08);
+    box-shadow: 
+        0 25px 50px rgba(255, 107, 157, 0.6),
+        0 10px 25px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, #e84393, #fd79a8, #ee5a6f);
+}
+
+.cta-button:active {
+    transform: translateY(-2px) scale(1.05);
+}
+
+.cta-text {
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
